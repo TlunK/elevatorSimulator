@@ -1,5 +1,5 @@
 # ElevatorSimulator 
-This is my final project for Syracuse University course CSE691 Multi-threading/Parallel Programming. The simulation runs according to the parameters defined in [sim.py]((./sim.py)). Elevators will run individually, pickup/let off orders randomly generated on different floors. After a certain number of orders are completed, it gives several kinds of metric statistics based on overall performance.  
+This is my final project for Syracuse University course CSE691 Multi-threading/Parallel Programming. The simulation runs according to the parameters defined in [sim.py]((./sim.py)). [Elevators](#elevator) will run individually, load/unload [orders](#order) randomly generated on different floors. After a certain number of orders are completed, it gives several kinds of metric statistics based on overall performance.  
 
 # SCAN Algorithm
 The elevator continues to travel in its current direction (up or down) until empty, stopping only to let individuals off or to pick up new individuals heading in the same direction.
