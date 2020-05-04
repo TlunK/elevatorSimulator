@@ -23,7 +23,7 @@ int NUM_ORDER = 5;
 
 // speed config
 // elevator speed is one pixel per loop
-std::chrono::milliseconds ELEVATOR_MOVE_INTERVAL(8);  // elevator moves by one pixel
+std::chrono::milliseconds ELEVATOR_MOVE_INTERVAL(6);  // elevator moves by one pixel
 std::chrono::milliseconds LOADING_UNLOADING_TIME(1000);  // time in milliseconds that loading or unloading passengers takes
 std::chrono::milliseconds ORDER_GENERATE_INTERVAL(1000);  // time in milliseconds between new orders
 

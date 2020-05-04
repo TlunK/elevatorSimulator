@@ -6,10 +6,11 @@ run individually, load/unload [orders](#order)
 randomly generated on different floors. 
 After a certain number of orders are completed, 
 it gives several kinds of metric statistics 
-based on overall performance.  
+based on overall performance.
 
-# Python Dependencies
-Tested on Python3.6
+# Dependencies
+Tested on `Python3.6`, `Windows 10` and `Visual Studio 2019`.  
+Python dependencies are listed below
 ```
 cycler==0.10.0
 kiwisolver==1.2.0
@@ -20,18 +21,25 @@ python-dateutil==2.8.1
 six==1.14.0
 ```
 
+You can install these using:
+```shell
+pip install -r requirements.txt
+```
+
 # Compile
 using Developer Command Prompt for VS 2019
 ```shell
 cl /EHsc server.cpp
 ```
 This will generate `server.exe` where simulation runs. `simulator.py` is just a frontend and control. 
+A precompiled `server.exe` is also provided in the repo. You can use it if it works. 
 
 # Run 
-Please make sure `server.cpp` is compiled and `server.exe` is put under the working directory.
+Please make sure `server.cpp` is compiled and `server.exe` is put under the working directory. 
 ```shell
 python simulator.py
 ```
+
 
 # Configuration
 All parameters are listed on the top of [sim.py]((./sim.py))  
