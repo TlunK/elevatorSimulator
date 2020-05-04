@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <WS2tcpip.h>
 #include <vector>
@@ -18,11 +19,11 @@ int MIN_FLOOR = -4;
 int NUM_FLOOR = (MAX_FLOOR - MIN_FLOOR + 1);  // including ground floor
 int NUM_ELEVATOR = 2;
 int ELEVATOR_CAPACITY = 20;
-int NUM_ORDER = 100;
+int NUM_ORDER = 5;
 
 // speed config
 // elevator speed is one pixel per loop
-std::chrono::milliseconds ELEVATOR_MOVE_INTERVAL(5);  // elevator moves by one pixel
+std::chrono::milliseconds ELEVATOR_MOVE_INTERVAL(1);  // elevator moves by one pixel
 std::chrono::milliseconds LOADING_UNLOADING_TIME(1000);  // time in milliseconds that loading or unloading passengers takes
 std::chrono::milliseconds ORDER_GENERATE_INTERVAL(1000);  // time in milliseconds between new orders
 
@@ -79,8 +80,8 @@ public:
 	int status = 3;
 	int UI_status = 3;
 
-	int going_up_target_floor=999;
-	int going_down_target_floor=999;
+	int going_up_target_floor = 999;
+	int going_down_target_floor = 999;
 
 	Elevator(int capacity, int index, int top, int floor) {
 		this->capacity = capacity;
@@ -217,9 +218,9 @@ public:
 		vector<Order*> finished;
 		for (auto order : this->cabin) {
 			if (order->to_floor == cur_floor) {
-				this->finish_order(order);
 				order->status = 2;
 				order->unload_time = chrono::system_clock::now();
+				finished.push_back(order);
 				std::this_thread::sleep_for(LOADING_UNLOADING_TIME);
 			}
 			else {
@@ -227,15 +228,18 @@ public:
 			}
 		}
 
+
+		this->cabin = new_cabin;
+		this->UI_status = this->status;
+
 		for (auto order : finished) {
 			order->status = 4;
 			finished_orders_lock.lock();
 			finished_orders.push_back(order);
 			finished_orders_lock.unlock();
-		}
 
-		this->cabin = new_cabin;
-		this->UI_status = this->status;
+			this->finish_order(order);
+		}
 	}
 
 	void load() {
@@ -255,7 +259,7 @@ public:
 				continue;
 			}
 
-			if (order->to_floor > cur_floor && this->status == 1) {
+			if (order->to_floor > cur_floor&& this->status == 1) {
 				cabin.push_back(order);
 				this->set_going_up_target_floor(order->to_floor);
 				order->status = 1;
@@ -297,7 +301,7 @@ public:
 	void elevator_thread() {
 
 		cout << "elevator #" << this->index << " started" << endl;
-		while (!finish) {
+		while (!(finish && this->status == 3)) {
 			if (this->status == 1) {
 				this->going_up();
 			}
@@ -309,6 +313,8 @@ public:
 			}
 			std::this_thread::sleep_for(ELEVATOR_MOVE_INTERVAL);
 		}
+
+		cout << "elevator #" << this->index << " exited" << this->UI_status << endl;
 	}
 
 	void print_elevator() {
@@ -408,7 +414,7 @@ void order_scheduler() {
 				schedule_order(order, winner);
 			}
 		}
-		std::this_thread::sleep_for(std::chrono::seconds(3));
+		std::this_thread::sleep_for(std::chrono::seconds(7));
 	}
 }
 
@@ -483,7 +489,7 @@ string format_memeory() {
 		for (auto order : ele->cabin) {
 			ss << order->from_floor << ",";
 			ss << order->to_floor << ",";
-			ss << order->status<< ",";
+			ss << order->status << ",";
 		}
 	}
 
@@ -577,7 +583,7 @@ void start_serving() {
 				is_first = false;
 			}
 			else {
-			    auto info = format_memeory();
+				auto info = format_memeory();
 				send(clientSocket, info.c_str(), info.length() + 1, 0);
 			}
 		}
@@ -588,6 +594,25 @@ void start_serving() {
 	//close the socket
 	//cleanup winsock
 	WSACleanup();
+}
+
+
+int to_unix_timestamp(chrono::time_point<std::chrono::system_clock> t) {
+	return chrono::duration_cast<chrono::seconds>(t.time_since_epoch()).count();
+}
+
+
+void data_analysis() {
+	ofstream myfile;
+	myfile.open("data_analysis.csv", std::ofstream::trunc);
+
+	for (auto order : finished_orders) {
+		myfile << to_unix_timestamp(order->create_time) << "," <<
+			to_unix_timestamp(order->load_time) << "," <<
+			to_unix_timestamp(order->unload_time) << "\n";
+	}
+    myfile.flush();
+	myfile.close();
 }
 
 
@@ -605,15 +630,15 @@ int main(int argc, char** argv) {
 		ORDER_GENERATE_INTERVAL = std::chrono::milliseconds(order_interval);
 		LOADING_UNLOADING_TIME = std::chrono::milliseconds(loading_unloading);
 
-        cout << "!!!!!!!!!!!!!!!!!" << endl;
+		cout << "!!!!!!!!!!!!!!!!!" << endl;
 		cout << MAX_FLOOR << " "
 			<< MIN_FLOOR << " "
 			<< NUM_ELEVATOR << " "
 			<< ELEVATOR_CAPACITY << " "
 			<< NUM_ORDER << " "
+			<< PORT << " "
 			<< order_interval << " "
-			<< loading_unloading << " "
-			<< PORT << endl;
+			<< loading_unloading << endl;
 	}
 
 	init();
@@ -649,6 +674,8 @@ int main(int argc, char** argv) {
 	}
 
 	cout << "finished_orders len: " << finished_orders.size() << endl;
+
+	data_analysis();
 
 	gen.join();
 	scheduler.join();

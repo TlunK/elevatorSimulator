@@ -4,7 +4,7 @@ from tkinter import *
 from tkinter import messagebox
 import socket
 from multiprocessing import Process
-import subprocess
+import matplotlib.pyplot as plt
 
 # config will be loaded from server
 MAX_FLOOR = 0
@@ -297,13 +297,51 @@ def parse_config(data):
     GROUND_FLOOR_TOP = TOP_P + MAX_FLOOR * ELEVATOR_HEIGHT
 
 
+def show_plot():
+    time.sleep(1)  # wait for plot data
+    f = open('data_analysis.csv')
+    waiting_time = []
+    cabin_time = []
+    total_time = []
+    for line in f.readlines():
+        create_time, load_time, unload_time = [int(t) for t in line.split(",")]
+        waiting_time.append(load_time - create_time)
+        cabin_time.append(unload_time - load_time)
+        total_time.append(unload_time - create_time)
+
+    fig, ax = plt.subplots(3, sharex="all")
+    fig.canvas.set_window_title('Order Time Analysis')
+
+    num_bins = 10
+    # the histogram of the data
+    ax[0].hist(waiting_time, num_bins, alpha=0.7, edgecolor='black')
+
+    ax[0].set_xlabel('seconds')
+    ax[0].set_ylabel('# of orders')
+    ax[0].set_title("Waiting Time")
+
+    ax[1].hist(cabin_time, num_bins, alpha=0.7, edgecolor='black')
+
+    ax[1].set_xlabel('seconds')
+    ax[1].set_ylabel('# of orders')
+    ax[1].set_title("Cabin Time")
+
+    ax[2].hist(total_time, num_bins, alpha=0.7, edgecolor='black')
+
+    ax[2].set_xlabel('seconds')
+    ax[2].set_ylabel('# of orders')
+    ax[2].set_title("Total Time")
+
+    plt.tight_layout()
+    plt.show()
+
+
 def parse_data(data):
     data = data.decode("ascii")
     data = [int(s) for s in data.split(",")[:-1]]
     i = 0
 
     try:
-
         # update elevator
         for ele in elevator_list:
             ele.index = data[i]
@@ -333,10 +371,9 @@ def parse_data(data):
 
             i += length
             waiting_orders[floor] = orders
-    except IndexError as e:
+    except Exception as e:
         print(e)
         print(data)
-        raise e
 
 
 def main2(prev_window):
@@ -345,18 +382,27 @@ def main2(prev_window):
     # Create a TCP/IP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    try:
-        # Connect the socket to the port where the server is listening
-        server_address = ('localhost', PORT)
-        print('connecting to %s port %s' % server_address)
-        sock.connect(server_address)
+    retry = 3
+    success = False
+    ex = None
+    while retry > 0:
+        try:
+            # Connect the socket to the port where the server is listening
+            server_address = ('localhost', PORT)
+            print('connecting to %s port %s' % server_address)
+            sock.connect(server_address)
+            success = True
+        except Exception as e:
+            ex = e
+            retry -= 1
+            time.sleep(0.3)
 
-        message = '?'
-        print("Requesting configs")
-        sock.sendall(message.encode("ascii"))
-    except Exception as e:
-        messagebox.showinfo("Error", "Connect to server failed.")
-        raise e
+    if not success:
+        raise ex
+
+    message = '?'
+    print("Requesting configs")
+    sock.sendall(message.encode("ascii"))
 
     data = sock.recv(4096)
     print('received "%s"' % data)
@@ -372,6 +418,7 @@ def main2(prev_window):
     draw_counter(canvas)
 
     prev_finished_order_count = 0
+    has_shown_plot = False
     while True:
         # request simulation info
         message = '?'
@@ -391,6 +438,10 @@ def main2(prev_window):
             canvas.delete(canvas_counter)
             draw_counter(canvas)
 
+        if finished_order_count == NUM_ORDER and not has_shown_plot:
+            has_shown_plot = True
+            show_plot()
+
         master.update()
         time.sleep(0.01)
 
@@ -406,11 +457,12 @@ def run_server(command, args):
     os.execv(command, args)
 
 
-
-
 def main():
     window = Tk()
     window.title("Elevator Simulator")
+
+    label = Label(window, text="Window could be not large enough to display all floors, but simulation still works.")
+    label.pack()
 
     frame = Frame(window)
     frame.pack()
@@ -428,41 +480,43 @@ def main():
     MIN_FLOOR_entry.insert(0, "-3")
     MIN_FLOOR_entry.grid(row=start_row + 1, column=1)
 
+    start_row -= 1
+
     label = Label(frame, text="Number of Elevators")
-    label.grid(row=start_row + 2, column=0)
+    label.grid(row=start_row + 3, column=0)
     NUM_ELEVATOR_entry = Entry(frame, width=5)
-    NUM_ELEVATOR_entry.insert(0, "2")
-    NUM_ELEVATOR_entry.grid(row=start_row + 2, column=1)
+    NUM_ELEVATOR_entry.insert(0, "3")
+    NUM_ELEVATOR_entry.grid(row=start_row + 3, column=1)
 
     label = Label(frame, text="Elevator Capacity")
-    label.grid(row=start_row + 3, column=0)
+    label.grid(row=start_row + 4, column=0)
     ELEVATOR_CAPACITY_entry = Entry(frame, width=5)
     ELEVATOR_CAPACITY_entry.insert(0, "10")
-    ELEVATOR_CAPACITY_entry.grid(row=start_row + 3, column=1)
+    ELEVATOR_CAPACITY_entry.grid(row=start_row + 4, column=1)
 
     label = Label(frame, text="Number of Orders")
-    label.grid(row=start_row + 4, column=0)
+    label.grid(row=start_row + 5, column=0)
     NUM_ORDER_entry = Entry(frame, width=5)
-    NUM_ORDER_entry.insert(0, "50")
-    NUM_ORDER_entry.grid(row=start_row + 4, column=1)
+    NUM_ORDER_entry.insert(0, "10")
+    NUM_ORDER_entry.grid(row=start_row + 5, column=1)
 
     label = Label(frame, text="Generate Order Interval(MS)")
-    label.grid(row=start_row + 5, column=0)
+    label.grid(row=start_row + 6, column=0)
     order_interval_entry = Entry(frame, width=5)
     order_interval_entry.insert(0, "1000")
-    order_interval_entry.grid(row=start_row + 5, column=1)
+    order_interval_entry.grid(row=start_row + 6, column=1)
 
     label = Label(frame, text="Loading Unloading Time Per Order(MS)")
-    label.grid(row=start_row + 6, column=0)
+    label.grid(row=start_row + 7, column=0)
     loading_unloading_entry = Entry(frame, width=5)
     loading_unloading_entry.insert(0, "1000")
-    loading_unloading_entry.grid(row=start_row + 6, column=1)
+    loading_unloading_entry.grid(row=start_row + 7, column=1)
 
     label = Label(frame, text="TCP port")
-    label.grid(row=start_row + 7, column=0)
+    label.grid(row=start_row + 8, column=0)
     PORT_entry = Entry(frame, width=5)
     PORT_entry.insert(0, "53000")
-    PORT_entry.grid(row=start_row + 7, column=1)
+    PORT_entry.grid(row=start_row + 8, column=1)
 
     def run():
         global MAX_FLOOR, MIN_FLOOR, NUM_ELEVATOR, NUM_ORDER, ELEVATOR_CAPACITY, PORT
@@ -547,8 +601,7 @@ def main():
             return
         PORT = t
 
-        command = "server.exe " #+ " ".join([
-            #str(MAX_FLOOR), str(MIN_FLOOR), str(NUM_ELEVATOR), str(ELEVATOR_CAPACITY), str(NUM_ORDER), str(PORT)])
+        command = "server.exe "
 
         # server = subprocess.Popen("exec " + command, stdout=subprocess.PIPE, shell=True)
         server = Process(target=run_server, args=(command,
@@ -556,7 +609,7 @@ def main():
         server.start()
 
         # parent()
-        time.sleep(0.5)  # wait for server to start
+        time.sleep(0.1)  # wait for server to start
         try:
             main2(window)
         finally:
@@ -564,7 +617,7 @@ def main():
             server.join()
 
     submit = Button(frame, text="Run Simulation", command=run)
-    submit.grid(row=start_row + 8, column=0)
+    submit.grid(row=start_row + 9, column=0)
 
     mainloop()
 
