@@ -23,7 +23,7 @@ int NUM_ORDER = 5;
 
 // speed config
 // elevator speed is one pixel per loop
-std::chrono::milliseconds ELEVATOR_MOVE_INTERVAL(1);  // elevator moves by one pixel
+std::chrono::milliseconds ELEVATOR_MOVE_INTERVAL(8);  // elevator moves by one pixel
 std::chrono::milliseconds LOADING_UNLOADING_TIME(1000);  // time in milliseconds that loading or unloading passengers takes
 std::chrono::milliseconds ORDER_GENERATE_INTERVAL(1000);  // time in milliseconds between new orders
 
@@ -37,8 +37,8 @@ std::chrono::milliseconds ORDER_GENERATE_INTERVAL(1000);  // time in millisecond
 #define LEFT_P 70
 #define TOP_P 60
 
-#define GROUND_FLOOR_TOP (TOP_P + MAX_FLOOR * ELEVATOR_HEIGHT)
-#define MIN_FLOOR_TOP (TOP_P + (MAX_FLOOR - MIN_FLOOR) * ELEVATOR_HEIGHT)
+int GROUND_FLOOR_TOP = (TOP_P + MAX_FLOOR * ELEVATOR_HEIGHT);
+int MIN_FLOOR_TOP = (TOP_P + (MAX_FLOOR - MIN_FLOOR) * ELEVATOR_HEIGHT);
 
 
 class Order {
@@ -281,7 +281,7 @@ public:
 		lock->unlock();
 
 		if (count > 0) {
-			std::this_thread::sleep_for(LOADING_UNLOADING_TIME);
+			std::this_thread::sleep_for(LOADING_UNLOADING_TIME * count);
 			for (auto order : this->cabin) {
 				order->status = 3;
 			}
@@ -449,10 +449,10 @@ void OrderGenerator() {
 		}
 		schedule_order(order, winner);
 
-		cout << "New order: " << order->from_floor << " " << order->to_floor << " picked ele: " << winner->index << endl;
+		//cout << "New order: " << order->from_floor << " " << order->to_floor << " picked ele: " << winner->index << endl;
 
 		counter++;
-		cout << "counter: " << counter << endl;
+		//cout << "counter: " << counter << endl;
 		id++;
 
 		std::this_thread::sleep_for(ORDER_GENERATE_INTERVAL);
@@ -520,6 +520,9 @@ void start_serving() {
 	SOCKET listening = socket(AF_INET, SOCK_STREAM, 0);
 	if (listening == INVALID_SOCKET) {//-1
 		cerr << "Can't create a socket" << endl;
+		finish = true;
+		WSACleanup();
+		return;
 	}
 	//Bind the ip address and port to a socket
 	sockaddr_in hint;
@@ -564,6 +567,7 @@ void start_serving() {
 			if (bytesReceived == SOCKET_ERROR) {
 				cerr << "Error in recv(). Quitting" << endl;
 				closesocket(clientSocket);
+				closesocket(listening);
 				WSACleanup();
 				finish = true;
 				return;
@@ -572,6 +576,7 @@ void start_serving() {
 				cout << "client disconnected " << endl;
 				cout << "closing server" << endl;
 				closesocket(clientSocket);
+				closesocket(listening);
 				WSACleanup();
 				finish = true;
 				return;
@@ -629,6 +634,10 @@ int main(int argc, char** argv) {
 		int loading_unloading = std::atoi(argv[8]);
 		ORDER_GENERATE_INTERVAL = std::chrono::milliseconds(order_interval);
 		LOADING_UNLOADING_TIME = std::chrono::milliseconds(loading_unloading);
+
+		NUM_FLOOR = (MAX_FLOOR - MIN_FLOOR + 1);
+		GROUND_FLOOR_TOP = (TOP_P + MAX_FLOOR * ELEVATOR_HEIGHT);
+        MIN_FLOOR_TOP = (TOP_P + (MAX_FLOOR - MIN_FLOOR) * ELEVATOR_HEIGHT);
 
 		cout << "!!!!!!!!!!!!!!!!!" << endl;
 		cout << MAX_FLOOR << " "

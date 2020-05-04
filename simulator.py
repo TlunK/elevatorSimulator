@@ -1,4 +1,5 @@
 import time
+import math
 from collections import defaultdict
 from tkinter import *
 from tkinter import messagebox
@@ -64,6 +65,12 @@ class Elevator(object):
 
         self.cabin = []
         self.UI_status = Elevator.STATUS_IDLE
+
+
+
+def percentile(data, percentile):
+    size = len(data)
+    return sorted(data)[int(math.ceil((size * percentile) / 100)) - 1]
 
 
 def int_to_status(s):
@@ -312,25 +319,64 @@ def show_plot():
     fig, ax = plt.subplots(3, sharex="all")
     fig.canvas.set_window_title('Order Time Analysis')
 
-    num_bins = 10
+    num_bins = max(len(set(waiting_time)), 10)
     # the histogram of the data
     ax[0].hist(waiting_time, num_bins, alpha=0.7, edgecolor='black')
+    average0 = sum(waiting_time) * 1.0 / len(waiting_time)
+    ax[0].axvline(average0, color='k', linestyle='dashed', linewidth=1)
+    ax[0].text(average0, 0, 'avg', rotation=90)
+    percent_90_0 = percentile(waiting_time, 90)
+    ax[0].axvline(percent_90_0, color='k', linestyle='dashed', linewidth=1)
+    ax[0].text(percent_90_0, 0, '90%', rotation=90)
+    percent_95_0 = percentile(waiting_time, 95)
+    ax[0].axvline(percent_95_0, color='k', linestyle='dashed', linewidth=1)
+    ax[0].text(percent_95_0, 0, '95%', rotation=90)
+    percent_99_0 = percentile(waiting_time, 99)
+    ax[0].axvline(percent_99_0, color='k', linestyle='dashed', linewidth=1)
+    ax[0].text(percent_99_0, 0, '99%', rotation=90)
 
     ax[0].set_xlabel('seconds')
     ax[0].set_ylabel('# of orders')
-    ax[0].set_title("Waiting Time")
+    ax[0].set_title("Waiting Time (Before pick up)")
 
+    num_bins = max(len(set(cabin_time)), 10)
     ax[1].hist(cabin_time, num_bins, alpha=0.7, edgecolor='black')
+    average1 = sum(cabin_time) * 1.0 / len(cabin_time)
+    ax[1].axvline(average1, color='k', linestyle='dashed', linewidth=1)
+    ax[1].text(average1, 0, 'avg', rotation=90)
+    percent_90_1 = percentile(cabin_time, 90)
+    ax[1].axvline(percent_90_1, color='k', linestyle='dashed', linewidth=1)
+    ax[1].text(percent_90_1, 0, '90%', rotation=90)
+    percent_95_1 = percentile(cabin_time, 95)
+    ax[1].axvline(percent_95_1, color='k', linestyle='dashed', linewidth=1)
+    ax[1].text(percent_95_1, 0, '95%', rotation=90)
+    percent_99_1 = percentile(cabin_time, 99)
+    ax[1].axvline(percent_99_1, color='k', linestyle='dashed', linewidth=1)
+    ax[1].text(percent_99_1, 0, '99%', rotation=90)
 
     ax[1].set_xlabel('seconds')
     ax[1].set_ylabel('# of orders')
-    ax[1].set_title("Cabin Time")
+    ax[1].set_title("Cabin Time (Time spent in an elevator)")
 
+
+    num_bins = max(len(set(total_time)), 10)
     ax[2].hist(total_time, num_bins, alpha=0.7, edgecolor='black')
+    average2 = sum(total_time) * 1.0 / len(total_time)
+    ax[2].axvline(average2, color='k', linestyle='dashed', linewidth=1)
+    ax[2].text(average2, 0, 'avg', rotation=90)
+    percent_90_2 = percentile(total_time, 90)
+    ax[2].axvline(percent_90_2, color='k', linestyle='dashed', linewidth=1)
+    ax[2].text(percent_90_2, 0, '90%', rotation=90)
+    percent_95_2 = percentile(total_time, 95)
+    ax[2].axvline(percent_95_2, color='k', linestyle='dashed', linewidth=1)
+    ax[2].text(percent_95_2, 0, '95%', rotation=90)
+    percent_99_2 = percentile(total_time, 99)
+    ax[2].axvline(percent_99_2, color='k', linestyle='dashed', linewidth=1)
+    ax[2].text(percent_99_2, 0, '99%', rotation=90)
 
     ax[2].set_xlabel('seconds')
     ax[2].set_ylabel('# of orders')
-    ax[2].set_title("Total Time")
+    ax[2].set_title("Total Time (Total time to finish an order)")
 
     plt.tight_layout()
     plt.show()
@@ -616,8 +662,96 @@ def main():
             server.terminate()
             server.join()
 
-    submit = Button(frame, text="Run Simulation", command=run)
-    submit.grid(row=start_row + 9, column=0)
+    def test1():
+        MAX_FLOOR_entry.delete(0, END)
+        MIN_FLOOR_entry.delete(0, END)
+        NUM_ELEVATOR_entry.delete(0, END)
+        ELEVATOR_CAPACITY_entry.delete(0, END)
+        NUM_ORDER_entry.delete(0, END)
+        order_interval_entry.delete(0, END)
+        loading_unloading_entry.delete(0, END)
+
+        MAX_FLOOR_entry.insert(0, "30")
+        MIN_FLOOR_entry.insert(0, "-3")
+        NUM_ELEVATOR_entry.insert(0, "3")
+        ELEVATOR_CAPACITY_entry.insert(0, "30")
+        NUM_ORDER_entry.insert(0, "50")
+        order_interval_entry.insert(0, "1000")
+        loading_unloading_entry.insert(0, "1000")
+
+        messagebox.showinfo("Info", "Parameters updated")
+
+    test1_btn = Button(frame, text="Predefined Test Case #1", command=test1)
+    test1_btn.grid(row=start_row + 9, column=0)
+
+    def test2():
+        MAX_FLOOR_entry.delete(0, END)
+        MIN_FLOOR_entry.delete(0, END)
+        NUM_ELEVATOR_entry.delete(0, END)
+        ELEVATOR_CAPACITY_entry.delete(0, END)
+        NUM_ORDER_entry.delete(0, END)
+        order_interval_entry.delete(0, END)
+        loading_unloading_entry.delete(0, END)
+
+        MAX_FLOOR_entry.insert(0, "20")
+        MIN_FLOOR_entry.insert(0, "-10")
+        NUM_ELEVATOR_entry.insert(0, "5")
+        ELEVATOR_CAPACITY_entry.insert(0, "30")
+        NUM_ORDER_entry.insert(0, "50")
+        order_interval_entry.insert(0, "800")
+        loading_unloading_entry.insert(0, "800")
+
+        messagebox.showinfo("Info", "Parameters updated")
+
+    test2_btn = Button(frame, text="Predefined Test Case #2", command=test2)
+    test2_btn.grid(row=start_row + 10, column=0)
+
+    def test3():
+        MAX_FLOOR_entry.delete(0, END)
+        MIN_FLOOR_entry.delete(0, END)
+        NUM_ELEVATOR_entry.delete(0, END)
+        ELEVATOR_CAPACITY_entry.delete(0, END)
+        NUM_ORDER_entry.delete(0, END)
+        order_interval_entry.delete(0, END)
+        loading_unloading_entry.delete(0, END)
+
+        MAX_FLOOR_entry.insert(0, "30")
+        MIN_FLOOR_entry.insert(0, "-3")
+        NUM_ELEVATOR_entry.insert(0, "6")
+        ELEVATOR_CAPACITY_entry.insert(0, "30")
+        NUM_ORDER_entry.insert(0, "200")
+        order_interval_entry.insert(0, "300")
+        loading_unloading_entry.insert(0, "500")
+
+        messagebox.showinfo("Info", "Parameters updated")
+
+    test3_btn = Button(frame, text="Predefined Test Case #3", command=test3)
+    test3_btn.grid(row=start_row + 11, column=0)
+
+    def test4():
+        MAX_FLOOR_entry.delete(0, END)
+        MIN_FLOOR_entry.delete(0, END)
+        NUM_ELEVATOR_entry.delete(0, END)
+        ELEVATOR_CAPACITY_entry.delete(0, END)
+        NUM_ORDER_entry.delete(0, END)
+        order_interval_entry.delete(0, END)
+        loading_unloading_entry.delete(0, END)
+
+        MAX_FLOOR_entry.insert(0, "30")
+        MIN_FLOOR_entry.insert(0, "-3")
+        NUM_ELEVATOR_entry.insert(0, "2")
+        ELEVATOR_CAPACITY_entry.insert(0, "30")
+        NUM_ORDER_entry.insert(0, "200")
+        order_interval_entry.insert(0, "700")
+        loading_unloading_entry.insert(0, "500")
+
+        messagebox.showinfo("Info", "Parameters updated")
+
+    test4_btn = Button(frame, text="Predefined Test Case #4", command=test4)
+    test4_btn.grid(row=start_row + 12, column=0)
+
+    submit = Button(frame, text="Run Simulation", command=run, bg="red")
+    submit.grid(row=start_row + 13, column=0)
 
     mainloop()
 
