@@ -35,10 +35,11 @@ This will generate `server.exe` where simulation runs. `simulator.py` is just a 
 A precompiled `server.exe` is also provided in the repo. You can use it if it works. 
 
 # Run 
-Please make sure `server.cpp` is compiled and `server.exe` is put under the working directory. 
 ```shell
 python simulator.py
 ```
+Please make sure `server.cpp` is compiled and `server.exe` is put under the working directory.
+Do not run `server.exe` directly.
 
 
 # Configuration
@@ -94,6 +95,4 @@ Counters are updated simultaneously by all elevator threads. A lock is used to p
 
 ### Elevator SCAN Algorithm
 The elevator continues to travel in its current direction (up or down) until empty, stopping only to let individuals off or to pick up new individuals heading in the same direction.
-
-### Data Analysis
 

@@ -319,7 +319,7 @@ def show_plot():
     fig, ax = plt.subplots(3, sharex="all")
     fig.canvas.set_window_title('Order Time Analysis')
 
-    num_bins = max(len(set(waiting_time)), 10)
+    num_bins = min(max(len(set(waiting_time)), 10), 20)
     # the histogram of the data
     ax[0].hist(waiting_time, num_bins, alpha=0.7, edgecolor='black')
     average0 = sum(waiting_time) * 1.0 / len(waiting_time)
@@ -549,13 +549,13 @@ def main():
     label = Label(frame, text="Generate Order Interval(MS)")
     label.grid(row=start_row + 6, column=0)
     order_interval_entry = Entry(frame, width=5)
-    order_interval_entry.insert(0, "1000")
+    order_interval_entry.insert(0, "500")
     order_interval_entry.grid(row=start_row + 6, column=1)
 
     label = Label(frame, text="Loading Unloading Time Per Order(MS)")
     label.grid(row=start_row + 7, column=0)
     loading_unloading_entry = Entry(frame, width=5)
-    loading_unloading_entry.insert(0, "1000")
+    loading_unloading_entry.insert(0, "500")
     loading_unloading_entry.grid(row=start_row + 7, column=1)
 
     label = Label(frame, text="TCP port")
